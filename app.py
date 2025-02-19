@@ -1,5 +1,5 @@
 import streamlit as st
-import psycopg2
+#import psycopg2
 import pandas as pd
 from datetime import datetime
 from sqlalchemy import create_engine
