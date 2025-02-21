@@ -1,14 +1,30 @@
 import streamlit as st
 from datetime import datetime
 from supabase import create_client, Client
+from dotenv import load_dotenv
 import os
 
-# Supabase configuration - use Streamlit secrets or environment variables
-SUPABASE_URL = st.secrets.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
-SUPABASE_KEY = st.secrets.get("SUPABASE_KEY") or os.getenv("SUPABASE_KEY")
+# Load environment variables from .env file
+load_dotenv()
+
+# Supabase configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Debug and validation
+if not SUPABASE_URL or not SUPABASE_KEY:
+    st.error("Supabase configuration missing!")
+    st.write("SUPABASE_URL:", SUPABASE_URL)
+    st.write("SUPABASE_KEY:", SUPABASE_KEY)
+    st.stop()
 
 # Initialize Supabase client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    st.error(f"Failed to initialize Supabase: {str(e)}")
+    st.stop()
+
 
 def fetch_entries():
     """Fetch all entries from Supabase"""
@@ -66,6 +82,8 @@ def main():
                 # Convert timestamp to readable format
                 timestamp = datetime.fromisoformat(entry['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
                 st.text(f"{timestamp}")
+
+
 
 if __name__ == "__main__":
     main()
