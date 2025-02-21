@@ -1,69 +1,55 @@
 import streamlit as st
-#import psycopg2
-import pandas as pd
 from datetime import datetime
-from sqlalchemy import create_engine
 
-# Load database credentials from Streamlit secrets
-DB_PARAMS = st.secrets
+def main():
+    # Page title
+    st.markdown("""
+## Paul's Accountability Tracker
+### -Read Bible 3 times per day
+### -Walk 2 times per day
+### -Read Book 2 times per day
+""")
+    
+    # Initialize session state for entries if not exists
+    if 'entries' not in st.session_state:
+        st.session_state.entries = []
+    
+    # Container for total minutes
+    with st.container():
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            total_minutes = sum(entry['minutes'] for entry in st.session_state.entries)
+            st.metric("Total Minutes", total_minutes)
 
-# Create a connection engine
-def get_engine():
-    return create_engine(f"postgresql://{DB_PARAMS['user']}:{DB_PARAMS['password']}@{DB_PARAMS['host']}:{DB_PARAMS['port']}/{DB_PARAMS['dbname']}")
+    # Input form for new entries
+    with st.form(key='entry_form', clear_on_submit=True):
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            task = st.text_input("Task Description")
+        with col2:
+            minutes = st.number_input("Minutes", min_value=0, step=1)
+        with col3:
+            submit = st.form_submit_button("Add Entry")
+        
+        if submit and task:
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            st.session_state.entries.append({
+                "task": task,
+                "minutes": minutes,
+                "timestamp": current_time
+            })
 
+    # Display all entries
+    if st.session_state.entries:
+        st.write("Logged Entries:")
+        for i, entry in enumerate(st.session_state.entries):
+            col1, col2, col3 = st.columns([2, 1, 1])
+            with col1:
+                st.text(f"{entry['task']}")
+            with col2:
+                st.text(f"{entry['minutes']} minutes")
+            with col3:
+                st.text(f"{entry['timestamp']}")
 
-def create_table():
-    engine = get_engine()
-    with engine.connect() as conn:
-        conn.execute('''CREATE TABLE IF NOT EXISTS journal (
-                        id SERIAL PRIMARY KEY,
-                        entry TEXT,
-                        minutes INT,
-                        created_at TIMESTAMP DEFAULT NOW()
-                      )''')
-
-def insert_entry(entry, minutes):
-    engine = get_engine()
-    with engine.connect() as conn:
-        conn.execute("INSERT INTO journal (entry, minutes) VALUES (%s, %s)", (entry, minutes))
-
-def get_entries():
-    engine = get_engine()
-    with engine.connect() as conn:
-        df = pd.read_sql("SELECT * FROM journal ORDER BY created_at DESC", conn)
-    return df
-
-# UI Elements
-st.title("📝 Journal Tracker")
-
-st.sidebar.header("📊 Total Minutes Logged")
-
-# Create table if it doesn't exist
-create_table()
-
-# Input fields
-with st.form("entry_form"):
-    entry = st.text_area("New Journal Entry:", height=100)
-    minutes = st.number_input("Time Spent (minutes):", min_value=1, step=1)
-    submit = st.form_submit_button("Add Entry")
-
-if submit and entry:
-    insert_entry(entry, minutes)
-    st.success("Entry Added!")
-    st.experimental_rerun()
-
-# Fetch and display entries
-df = get_entries()
-total_minutes = df["minutes"].sum() if not df.empty else 0
-
-# Display total time logged
-st.sidebar.write(f"**Total Time:** {total_minutes} minutes")
-
-if not df.empty:
-    for _, row in df.iterrows():
-        with st.container():
-            st.write(f"📝 {row['entry']}")
-            st.write(f"⏳ {row['minutes']} minutes")
-            st.write("---")
-else:
-    st.write("No entries yet. Start journaling!")
+if __name__ == "__main__":
+    main()
