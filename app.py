@@ -3,7 +3,7 @@ from datetime import datetime
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
-import pytz  # Add this for timezone support
+import pytz
 
 # Load environment variables from .env file (local only)
 load_dotenv()
@@ -28,13 +28,13 @@ except Exception as e:
 
 # Define EST timezone
 EST = pytz.timezone('America/New_York')
+GOAL_MINUTES = 4000  # Define the goal
 
 def fetch_entries():
     response = supabase.table("time_logs").select("*").order("timestamp", desc=True).execute()
     return response.data
 
 def add_entry(task, minutes):
-    # Store in UTC (Supabase standard), conversion to EST happens on display
     timestamp = datetime.now(pytz.UTC).isoformat()
     data = {"task": task, "minutes": minutes, "timestamp": timestamp}
     supabase.table("time_logs").insert(data).execute()
@@ -46,14 +46,15 @@ def main():
 ### -Read a Book 2 times per day
 ### -Walk 2 times per day                
 """)
-
     entries = fetch_entries()
     
     with st.container():
         col1, col2 = st.columns([3, 1])
         with col2:
             total_minutes = sum(entry['minutes'] for entry in entries)
+            percentage = (total_minutes / GOAL_MINUTES) * 100 if GOAL_MINUTES > 0 else 0
             st.metric("Total Minutes", total_minutes)
+            st.metric("Goal Progress", f"{percentage:.1f}%", f"of {GOAL_MINUTES} min")
 
     with st.form(key='entry_form', clear_on_submit=True):
         col1, col2, col3 = st.columns([2, 1, 1])
@@ -76,7 +77,6 @@ def main():
             with col2:
                 st.text(f"{entry['minutes']} minutes")
             with col3:
-                # Convert UTC to EST
                 utc_time = datetime.fromisoformat(entry['timestamp'])
                 est_time = utc_time.astimezone(EST)
                 timestamp = est_time.strftime("%Y-%m-%d %H:%M:%S %Z")
