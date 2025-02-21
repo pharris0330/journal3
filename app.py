@@ -41,7 +41,7 @@ def add_entry(task, minutes):
 
 def main():
     st.markdown("""
-## Paul's Accountability Journal
+## Paul's Accountability Journal (2025 GOAL = 4k min)
 ### -Read Bible 3 times per day
 ### -Read a Book 2 times per day
 ### -Walk 2 times per day                
