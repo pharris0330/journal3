@@ -43,7 +43,12 @@ def add_entry(task, minutes):
 
 def main():
     # Page title
-    st.title("Time Logger")
+    st.markdown("""
+## Paul's Accountability Journal
+### -Read Bible 3 times per day
+### -Read a Book 2 times per day
+### -Walk 2 times per day                
+""")
     
     # Fetch existing entries
     entries = fetch_entries()
